@@ -8,38 +8,50 @@ import { AppContext } from './context/AppContext.js';
 
 function App() {
   const [message,setMessage]=useState('');
+  const [num1,setNum1]=useState(0);
+  const [num2,setNum2]=useState(0);
+
   const [socket,setSocket]=useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   // const audioFile = './mixkit-musical-reveal-961.wav'; 
-  const {audios,audioSelected,setaudioSelected,messages,firstRender,setFirstRender}=useContext(AppContext)
+  const {audios,audioSelected,setaudioSelected,messages,firstRender,setFirstRender,setMessages}=useContext(AppContext)
   const audioElement = new Audio(audios[audioSelected]);
   
-  
+  console.log(messages);
   useEffect(()=>{
     setSocket(new WebSocket('ws://127.0.0.1:8000/ws/notification/'));
   },[])
+ 
   function submitHandler(){
       
-        socket.addEventListener("open", event => {
-          socket.send("Connection established");
+        // socket.addEventListener("open", event => {
+        //   socket.send("Connection established");
           
-        });
-          socket.addEventListener("message", event => {
-            console.log("Message from server ", event.data);
-            console.log(audioElement);
-            new Audio(audios[audioSelected]).play()
-            // console.log(audioElement);
-            console.log(audioSelected);
-          });
+        // });
+          
           setFirstRender(!firstRender)
       
 
    
-      socket.send(message);
+      socket.send(JSON.stringify({"num1":num1,"num2":num2}));
+      socket.addEventListener("message", event => {
+        console.log("Message from server ", event.data,num1,num2);
+        const output=event.data
+        console.log(JSON.parse(output)["result"]);
+        const newMessage=`${num1} * ${num2} = ${JSON.parse(output)["result"]}`
+        setMessages((prev)=>[newMessage])
+        
+        console.log(audioElement);
+        new Audio(audios[audioSelected]).play()
+        // console.log(audioElement);
+        console.log(audioSelected);
+      });
       // togglePlay()
       
-      messages.push(message);
-      setMessage('');
+      
+      setNum1(0);
+      setNum2(0);
+     
       
       
 
@@ -72,15 +84,29 @@ function App() {
       {
         (socket==='')?(<Spinner/>):(<div>
           <NotificationComponent/>
-          <input type='text' 
-          value={message}
+          <div className='table'>
+
+          
+          <input type='number' 
+          value={num1}
           placeholder='Enter value here'
           onChange={(e)=>{
            
-           setMessage(e.target.value)
+           setNum1(e.target.value)
     
           }}/>
+          <div className='symbol'>X</div>
+          <input type='number' 
+          value={num2}
+          placeholder='Enter value here'
+          onChange={(e)=>{
+           
+           setNum2(e.target.value)
+    
+          }}/>
+          
           <button onClick={submitHandler}>submit</button>
+          </div>
           {/* <audio src={require('./mixkit-musical-reveal-961.wav')}  controls ></audio> */}
           </div>)
       }
